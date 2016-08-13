@@ -5,16 +5,14 @@ import os.path
 #These variables are used to control various aspects of the server
 #And will probably be moved to a proper config file... someday.
 
-storedserver='/home/krc/cardserver.conf'
+storedserver='/home/krc/cardserver4.conf'
+serverport=6667
+#storedserver='C:\\Users\\Cruxien\\Cardgame\\cardgame'
 
 #End config area
 
-def connect(): #Connects to specified IRC server
-	print('Reading stored server from', storedserver)
-	f = open(storedserver) #Opens the file which is storing our server address
-	connect_to = f.readline() #Reads (hopefully...) the address from the server
-	f.close() #Close the file
-	print('Now connecting to', connect_to)
+global irc
+
 
 def setupirc(): #This function should create/recreate the file which is storing the address of the irc server to connect to
 	print('No stored server has been found.')
@@ -24,7 +22,25 @@ def setupirc(): #This function should create/recreate the file which is storing 
 	connect()
 
 if os.path.exists(storedserver):
-	connect()
+	print('Reading stored server from', storedserver)
+	f = open(storedserver) #Opens the file which is storing our server address
+	connect_to = f.readline() #Reads (hopefully...) the address for the server
+	f.close() #Close the file
+	print('Now connecting to', connect_to) #Print what we're connecting to
+	global irc
+	irc = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
+	irc.connect((connect_to, serverport))
+	irc.send('NICK CardServerrn'.encode('utf-8'))
+	irc.send('USER CardServer CardServer CardServer :Card Serverrn'.encode('utf-8'))
+	irc.send('JOIN #cardslobbyrn'.encode('utf-8'))
+	irc.send('PRIVMSG #cardslobby :Can you hear me??rn'.encode('utf-8'))
 else:
 	setupirc()
+
+#Thus begins the main server loop (oh dear...)
+
+while True:
+	data = irc.recv(4096)
+	if data.find('PING'.encode('utf-8')) != -1:
+		irc.send('PONG'.encode('utf-8') + data.split() [1] + 'rn'.encode('[utf-8'))
 	
